@@ -1,0 +1,33 @@
+{
+  "id": "google-calendar",
+  "name": "Google Calendar",
+  "version": "0.1.0",
+  "author": "YOUR_NAME <your-email@example.com>",
+  "description": "Desktop card with your next Google Calendar events; click to open, + to create.",
+  "license": "MIT",
+  "official": false,
+  "tags": ["google", "calendar", "agenda", "desktop-widget"],
+  "hosts": ["desktopWidget"],
+  "entryPoints": {
+    "main": "service/Main.qml",
+    "content": "content/Widget.qml"
+  },
+  "files": ["bin/gapi"],
+  "capabilities": {
+    "densities": ["full"],
+    "network": ["accounts.google.com", "oauth2.googleapis.com", "www.googleapis.com", "calendar.google.com"]
+  },
+  "defaults": {
+    "host": "desktopWidget",
+    "icon": "calendar_month",
+    "label": "Google Calendar"
+  },
+  "dependencies": {
+    "commands": ["python3", "xdg-open"]
+  },
+  "metadata": {
+    "settings": [
+      { "key": "maxEvents", "type": "int", "label": "Events to show", "group": "Google Calendar", "default": 6 }
+    ]
+  }
+}

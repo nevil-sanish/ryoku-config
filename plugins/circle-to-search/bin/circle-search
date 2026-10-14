@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# circle-search: drag a box around anything on screen, search it with Google Lens.
+# Needs grim + slurp (Wayland), curl, xdg-open. Esc during the drag cancels.
+set -euo pipefail
+
+img=$(mktemp --suffix=.png)
+trap 'rm -f "$img"' EXIT
+
+geom=$(slurp) || exit 0
+grim -g "$geom" "$img"
+
+# Lens answers the upload with a 303 to the results page; open that.
+url=$(curl -sS -o /dev/null -w '%{redirect_url}' \
+	-F "encoded_image=@$img" \
+	"https://lens.google.com/v3/upload?ep=ccm&st=$(date +%s%3N)")
+
+if [ -z "$url" ]; then
+	echo "circle-search: Google Lens upload failed" >&2
+	exit 1
+fi
+xdg-open "$url"

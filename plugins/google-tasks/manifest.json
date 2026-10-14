@@ -1,0 +1,28 @@
+{
+  "id": "google-tasks",
+  "name": "Google Tasks",
+  "version": "0.1.0",
+  "author": "YOUR_NAME <your-email@example.com>",
+  "description": "Desktop card for your Google Tasks default list: see, add and complete tasks.",
+  "license": "MIT",
+  "official": false,
+  "tags": ["google", "tasks", "todo", "desktop-widget"],
+  "hosts": ["desktopWidget"],
+  "entryPoints": {
+    "main": "service/Main.qml",
+    "content": "content/Widget.qml"
+  },
+  "files": ["bin/gapi"],
+  "capabilities": {
+    "densities": ["full"],
+    "network": ["accounts.google.com", "www.googleapis.com", "oauth2.googleapis.com", "tasks.googleapis.com"]
+  },
+  "defaults": {
+    "host": "desktopWidget",
+    "icon": "checklist",
+    "label": "Google Tasks"
+  },
+  "dependencies": {
+    "commands": ["python3", "xdg-open"]
+  }
+}

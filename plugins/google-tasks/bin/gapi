@@ -1,0 +1,143 @@
+#!/usr/bin/env python3
+"""gapi: tiny Google OAuth + REST helper for Ryoku widgets (stdlib only).
+
+usage: gapi <state_dir> <scopes> <METHOD> <url> [json-body]
+
+Client credentials (YOUR OWN OAuth "Desktop app" client, never committed):
+  $RYOKU_GOOGLE_CLIENT, else $XDG_CONFIG_HOME/ryoku/google-client.json
+The token is kept in <state_dir>/token.json (mode 600). With no token yet, the
+first call opens the browser for consent on a localhost redirect.
+Prints the response JSON on stdout; on failure prints {"error": "..."} and exits 1.
+"""
+import http.server
+import json
+import os
+import secrets
+import sys
+import time
+import urllib.error
+import urllib.parse
+import urllib.request
+import webbrowser
+
+
+def fail(msg):
+    print(json.dumps({"error": str(msg)}))
+    sys.exit(1)
+
+
+def client():
+    path = os.environ.get("RYOKU_GOOGLE_CLIENT") or os.path.join(
+        os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config")),
+        "ryoku", "google-client.json")
+    try:
+        with open(path) as f:
+            c = json.load(f)
+    except OSError:
+        fail(f"missing Google client file: {path} (see README)")
+    return c.get("installed") or c.get("web") or c
+
+
+def post_form(url, data):
+    req = urllib.request.Request(url, urllib.parse.urlencode(data).encode())
+    with urllib.request.urlopen(req, timeout=30) as r:
+        return json.load(r)
+
+
+def save(state, tok):
+    tok["expires_at"] = time.time() + int(tok.get("expires_in", 3600)) - 60
+    os.makedirs(state, exist_ok=True)
+    path = os.path.join(state, "token.json")
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w") as f:
+        json.dump(tok, f)
+    return tok
+
+
+def authorize(state, scopes, c):
+    code_box = {}
+    want_state = secrets.token_urlsafe(16)
+
+    class H(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            if q.get("state", [""])[0] == want_state:
+                code_box["code"] = q.get("code", [""])[0]
+                code_box["error"] = q.get("error", [""])[0]
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html")
+            self.end_headers()
+            self.wfile.write(b"<h3>Ryoku: signed in. You can close this tab.</h3>")
+
+        def log_message(self, *a):
+            pass
+
+    srv = http.server.HTTPServer(("127.0.0.1", 0), H)
+    srv.timeout = 300
+    redirect = f"http://127.0.0.1:{srv.server_port}"
+    webbrowser.open(c["auth_uri"] + "?" + urllib.parse.urlencode({
+        "client_id": c["client_id"], "redirect_uri": redirect,
+        "response_type": "code", "scope": scopes, "state": want_state,
+        "access_type": "offline", "prompt": "consent"}))
+    srv.handle_request()  # one request, or 300 s timeout
+    srv.server_close()
+    if not code_box.get("code"):
+        fail(code_box.get("error") or "sign-in was not completed")
+    return save(state, post_form(c["token_uri"], {
+        "code": code_box["code"], "client_id": c["client_id"],
+        "client_secret": c.get("client_secret", ""), "redirect_uri": redirect,
+        "grant_type": "authorization_code"}))
+
+
+def token(state, scopes, c, force_refresh=False):
+    try:
+        with open(os.path.join(state, "token.json")) as f:
+            tok = json.load(f)
+    except (OSError, ValueError):
+        return authorize(state, scopes, c)
+    if not force_refresh and tok.get("expires_at", 0) > time.time():
+        return tok
+    if "refresh_token" not in tok:
+        return authorize(state, scopes, c)
+    try:
+        new = post_form(c["token_uri"], {
+            "refresh_token": tok["refresh_token"], "client_id": c["client_id"],
+            "client_secret": c.get("client_secret", ""), "grant_type": "refresh_token"})
+    except urllib.error.HTTPError:  # revoked or expired grant: sign in again
+        return authorize(state, scopes, c)
+    new.setdefault("refresh_token", tok["refresh_token"])
+    return save(state, new)
+
+
+def call(tok, method, url, body):
+    req = urllib.request.Request(url, method=method, data=body.encode() if body else None,
+                                 headers={"Authorization": "Bearer " + tok["access_token"],
+                                          "Content-Type": "application/json"})
+    with urllib.request.urlopen(req, timeout=30) as r:
+        raw = r.read()
+    return raw.decode() if raw else "{}"
+
+
+def main(argv):
+    if len(argv) < 5:
+        fail(__doc__.strip().splitlines()[2])
+    state, scopes, method, url = argv[1:5]
+    body = argv[5] if len(argv) > 5 else ""
+    if not url.startswith("https://") or ".googleapis.com/" not in url:
+        fail("only https://*.googleapis.com URLs are allowed")
+    c = client()
+    try:
+        try:
+            print(call(token(state, scopes, c), method, url, body))
+        except urllib.error.HTTPError as e:
+            if e.code != 401:
+                raise
+            print(call(token(state, scopes, c, force_refresh=True), method, url, body))
+    except urllib.error.HTTPError as e:
+        fail(f"HTTP {e.code}: {e.read().decode(errors='replace')[:300]}")
+    except (urllib.error.URLError, OSError) as e:
+        fail(e)
+
+
+if __name__ == "__main__":
+    main(sys.argv)

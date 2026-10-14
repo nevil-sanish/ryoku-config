@@ -1,0 +1,28 @@
+{
+  "id": "circle-to-search",
+  "name": "Circle to Search",
+  "version": "0.1.0",
+  "author": "YOUR_NAME <your-email@example.com>",
+  "description": "Drag a box around anything on screen and search it with Google Lens.",
+  "license": "MIT",
+  "official": false,
+  "tags": ["google", "lens", "search", "screenshot", "desktop-widget"],
+  "hosts": ["desktopWidget"],
+  "entryPoints": {
+    "main": "service/Main.qml",
+    "content": "content/Widget.qml"
+  },
+  "files": ["bin/circle-search"],
+  "capabilities": {
+    "densities": ["full"],
+    "network": ["lens.google.com", "www.google.com"]
+  },
+  "defaults": {
+    "host": "desktopWidget",
+    "icon": "search",
+    "label": "Circle to Search"
+  },
+  "dependencies": {
+    "commands": ["grim", "slurp", "curl", "xdg-open"]
+  }
+}

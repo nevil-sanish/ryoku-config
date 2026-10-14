@@ -1,0 +1,33 @@
+{
+  "id": "google-docs",
+  "name": "Google Docs",
+  "version": "0.1.0",
+  "author": "YOUR_NAME <your-email@example.com>",
+  "description": "Desktop card with your recent Google Docs, a new-doc button and a Google Keep shortcut.",
+  "license": "MIT",
+  "official": false,
+  "tags": ["google", "docs", "notes", "keep", "desktop-widget"],
+  "hosts": ["desktopWidget"],
+  "entryPoints": {
+    "main": "service/Main.qml",
+    "content": "content/Widget.qml"
+  },
+  "files": ["bin/gapi"],
+  "capabilities": {
+    "densities": ["full"],
+    "network": ["accounts.google.com", "oauth2.googleapis.com", "www.googleapis.com", "docs.google.com", "docs.new", "keep.google.com"]
+  },
+  "defaults": {
+    "host": "desktopWidget",
+    "icon": "description",
+    "label": "Google Docs"
+  },
+  "dependencies": {
+    "commands": ["python3", "xdg-open"]
+  },
+  "metadata": {
+    "settings": [
+      { "key": "maxDocs", "type": "int", "label": "Docs to show", "group": "Google Docs", "default": 6 }
+    ]
+  }
+}
