@@ -1,0 +1,14 @@
+{
+  "idle": {
+    "battery": {
+      "dimSec": 240,
+      "suspendSec": 900
+    },
+    "ac": {
+      "dimSec": 300,
+      "screenOffSec": 1800,
+      "suspendSec": 4800,
+      "lockSec": 1200
+    }
+  }
+}

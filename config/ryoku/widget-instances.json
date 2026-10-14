@@ -1,0 +1,29 @@
+{
+  "gcal-seed": {
+    "type": "gcal",
+    "wAnchor": "free",
+    "wX": 1312,
+    "wY": 64,
+    "wScale": 1,
+    "wOpacity": 1,
+    "wLocked": false
+  },
+  "gtasks-seed": {
+    "type": "gtasks",
+    "wAnchor": "free",
+    "wX": 640,
+    "wY": 64,
+    "wScale": 0.9675322855643765,
+    "wOpacity": 1,
+    "wLocked": false
+  },
+  "notes-mv6jex0i": {
+    "type": "notes",
+    "wAnchor": "free",
+    "wX": 1311,
+    "wY": 512,
+    "wScale": 1.0758458698335096,
+    "wOpacity": 1,
+    "wLocked": false
+  }
+}

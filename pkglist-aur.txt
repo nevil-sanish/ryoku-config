@@ -1,0 +1,14 @@
+antigravity
+antigravity-ide
+apple_cursor
+browseros-neo-bin
+catppuccin-cursors-mocha
+google-chrome
+localsend-bin
+nvibrant-bin
+pam-fprint-grosshack
+phinger-cursors
+spotify
+ttf-fraunces-variable
+voxtype-bin
+yay-bin

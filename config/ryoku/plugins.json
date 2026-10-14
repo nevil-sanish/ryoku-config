@@ -1,0 +1,46 @@
+{
+  "mjw-notes": {
+    "enabled": false,
+    "host": "desktopWidget",
+    "settings": {},
+    "desktopWidget": {
+      "x": 992,
+      "y": 32,
+      "scale": 0.85
+    }
+  },
+  "mjw-habits": {
+    "enabled": false,
+    "host": "desktopWidget",
+    "settings": {
+      "colorAuto": false,
+      "color": ""
+    },
+    "desktopWidget": {
+      "x": 1216,
+      "y": 480,
+      "scale": 0.8
+    }
+  },
+  "mjw-todo": {
+    "enabled": false,
+    "host": "desktopWidget",
+    "settings": {
+      "colorAuto": true,
+      "color": "#BCC3FF"
+    },
+    "desktopWidget": {
+      "x": 1120,
+      "y": 128,
+      "scale": 0.85
+    }
+  },
+  "bluetooth-profiles": {
+    "enabled": true,
+    "host": "topbarGlyph",
+    "settings": {
+      "barBadge": "count",
+      "autoExpand": true
+    }
+  }
+}

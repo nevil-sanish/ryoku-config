@@ -1,0 +1,15 @@
+{
+    "bgBlur": 30,
+    "heroImage": "",
+    "heroPosX": 0.5,
+    "heroPosY": 0.5,
+    "heroStrength": 0.2701,
+    "horizonColor": "#ffc777",
+    "horizonMode": "auto",
+    "radius": 26,
+    "resultSettleMs": 360,
+    "showGreeting": true,
+    "showWeather": true,
+    "variant": "main",
+    "weatherUnit": "C"
+}

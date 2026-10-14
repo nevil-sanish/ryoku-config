@@ -1,0 +1,25 @@
+# Ryoku palette -> ghostty. Rendered by matugen; do not edit. Your own settings
+# live in ~/.config/ghostty/config, which includes this file for the colours.
+
+background = #101418
+foreground = #e0e2e8
+cursor-color = #9dcbfc
+cursor-text = #003355
+selection-background = #3a4857
+selection-foreground = #d6e4f7
+palette = 0=#272a2f
+palette = 1=#ffb4ab
+palette = 2=#9dcbfc
+palette = 3=#d4bee5
+palette = 4=#bac8da
+palette = 5=#cfe4ff
+palette = 6=#d6e4f7
+palette = 7=#c2c7cf
+palette = 8=#8c9199
+palette = 9=#ffb4ab
+palette = 10=#cfe4ff
+palette = 11=#f0dbff
+palette = 12=#d6e4f7
+palette = 13=#9dcbfc
+palette = 14=#8c9199
+palette = 15=#e0e2e8

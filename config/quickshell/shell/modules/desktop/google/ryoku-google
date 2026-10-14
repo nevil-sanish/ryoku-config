@@ -1,0 +1,354 @@
+#!/usr/bin/env python3
+"""Google Calendar + Tasks for the desktop widgets. Stdlib only.
+
+  ryoku-google login <client_secret.json>   one-time browser sign-in
+  ryoku-google events                       upcoming events, JSON on stdout
+  ryoku-google tasks                        open tasks, JSON on stdout
+  ryoku-google done <list-id> <task-id>     complete a task
+  ryoku-google add <title> [list-id]        add a task
+  ryoku-google note-sync <pad-id>           two-way sync a desktop notes pad with a Google Doc
+  ryoku-google selftest
+
+Every data command prints one JSON object: {"ok": true, "items": [...]} or
+{"ok": false, "error": "..."}; "auth" means: run login.
+Credentials live in ~/.config/ryoku/google.json (mode 0600).
+"""
+import base64, datetime as dt, hashlib, http.server, json, os, secrets, sys
+import urllib.error, urllib.parse, urllib.request, webbrowser
+
+CFG = os.path.join(os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~/.config"),
+                   "ryoku", "google.json")
+SCOPES = ("https://www.googleapis.com/auth/calendar.readonly "
+          "https://www.googleapis.com/auth/tasks "
+          "https://www.googleapis.com/auth/drive.file")  # only files this app created
+TOKEN_URL = "https://oauth2.googleapis.com/token"
+CAL = "https://www.googleapis.com/calendar/v3"
+TASKS = "https://tasks.googleapis.com/tasks/v1"
+DRIVE = "https://www.googleapis.com/drive/v3/files"
+DRIVE_UP = "https://www.googleapis.com/upload/drive/v3/files"
+STATE = os.path.join(os.environ.get("XDG_STATE_HOME") or os.path.expanduser("~/.local/state"), "ryoku")
+
+
+class AuthError(Exception):
+    pass
+
+
+def load():
+    try:
+        with open(CFG) as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return {}
+
+
+def save(cfg):
+    os.makedirs(os.path.dirname(CFG), exist_ok=True)
+    fd = os.open(CFG + ".tmp", os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w") as f:
+        json.dump(cfg, f)
+    os.replace(CFG + ".tmp", CFG)
+
+
+def post_form(url, fields):
+    req = urllib.request.Request(url, urllib.parse.urlencode(fields).encode())
+    with urllib.request.urlopen(req, timeout=20) as r:
+        return json.load(r)
+
+
+def access_token():
+    cfg = load()
+    if not cfg.get("refresh_token"):
+        raise AuthError()
+    now = dt.datetime.now().timestamp()
+    if cfg.get("access_token") and cfg.get("expiry", 0) > now + 60:
+        return cfg["access_token"]
+    try:
+        tok = post_form(TOKEN_URL, {
+            "client_id": cfg["client_id"], "client_secret": cfg["client_secret"],
+            "refresh_token": cfg["refresh_token"], "grant_type": "refresh_token"})
+    except urllib.error.HTTPError as e:
+        if e.code in (400, 401):  # revoked or expired grant
+            raise AuthError()
+        raise
+    cfg["access_token"] = tok["access_token"]
+    cfg["expiry"] = now + tok.get("expires_in", 3600)
+    save(cfg)
+    return cfg["access_token"]
+
+
+def call(url, params=None, method="GET", data=None, ctype=None):
+    if params:
+        url += "?" + urllib.parse.urlencode(params)
+    req = urllib.request.Request(url, method=method, data=data)
+    req.add_header("Authorization", "Bearer " + access_token())
+    if ctype:
+        req.add_header("Content-Type", ctype)
+    try:
+        with urllib.request.urlopen(req, timeout=20) as r:
+            return r.read()
+    except urllib.error.HTTPError as e:
+        # 403 on Drive = signed in before the notes scope existed: log in again.
+        if e.code == 401 or (e.code == 403 and "/drive/" in url):
+            raise AuthError()
+        raise
+
+
+def api(url, params=None, method="GET", body=None):
+    raw = call(url, params, method, json.dumps(body).encode() if body is not None else None,
+               "application/json" if body is not None else None)
+    return json.loads(raw) if raw else {}
+
+
+def login(secret_path):
+    with open(secret_path) as f:
+        raw = json.load(f)
+    client = raw.get("installed") or raw.get("web") or raw
+    verifier = secrets.token_urlsafe(64)
+    challenge = base64.urlsafe_b64encode(
+        hashlib.sha256(verifier.encode()).digest()).rstrip(b"=").decode()
+    state = secrets.token_urlsafe(16)
+    got = {}
+
+    class Handler(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            if q.get("state", [""])[0] == state:
+                got.update(code=q.get("code", [""])[0], error=q.get("error", [""])[0])
+            self.send_response(200)
+            self.send_header("Content-Type", "text/plain")
+            self.end_headers()
+            self.wfile.write(b"Signed in. You can close this tab.")
+
+        def log_message(self, *a):
+            pass
+
+    srv = http.server.HTTPServer(("127.0.0.1", 0), Handler)
+    redirect = "http://127.0.0.1:%d" % srv.server_port
+    url = "https://accounts.google.com/o/oauth2/v2/auth?" + urllib.parse.urlencode({
+        "client_id": client["client_id"], "redirect_uri": redirect, "response_type": "code",
+        "scope": SCOPES, "access_type": "offline", "prompt": "consent", "state": state,
+        "code_challenge": challenge, "code_challenge_method": "S256"})
+    print("Opening the browser to sign in. If it does not open, visit:\n\n" + url + "\n")
+    webbrowser.open(url)
+    while not got:
+        srv.handle_request()
+    if not got.get("code"):
+        sys.exit("Sign-in failed: " + (got.get("error") or "no code returned"))
+    tok = post_form(TOKEN_URL, {
+        "client_id": client["client_id"], "client_secret": client["client_secret"],
+        "code": got["code"], "code_verifier": verifier, "redirect_uri": redirect,
+        "grant_type": "authorization_code"})
+    if not tok.get("refresh_token"):
+        sys.exit("Google returned no refresh token; remove the app's access at "
+                 "https://myaccount.google.com/permissions and log in again.")
+    cfg = load()  # keep the pad -> Google Doc map across a re-login
+    cfg.update({"client_id": client["client_id"], "client_secret": client["client_secret"],
+                "refresh_token": tok["refresh_token"], "access_token": tok["access_token"],
+                "expiry": dt.datetime.now().timestamp() + tok.get("expires_in", 3600)})
+    save(cfg)
+    print("Signed in. The widgets pick this up on their next refresh.")
+
+
+def norm_event(e, color=""):
+    """Google event -> the flat row the widget draws."""
+    s, en = e.get("start", {}), e.get("end", {})
+    return {"title": e.get("summary") or "(No title)",
+            "allDay": "date" in s,
+            "start": s.get("dateTime") or s.get("date") or "",
+            "end": en.get("dateTime") or en.get("date") or "",
+            "color": color,
+            "link": e.get("htmlLink", "")}
+
+
+def sort_key(row):
+    # all-day rows carry a bare date; sort them at local midnight, ahead of that
+    # day's timed events.
+    if row["allDay"]:
+        return dt.datetime.fromisoformat(row["start"]).astimezone().timestamp() - 1
+    return dt.datetime.fromisoformat(row["start"].replace("Z", "+00:00")).timestamp()
+
+
+def week_window(today):
+    """Yesterday 00:00 up to seven days on: yesterday, today and the next five."""
+    start = dt.datetime.combine(today - dt.timedelta(days=1), dt.time()).astimezone()
+    return start, start + dt.timedelta(days=7)
+
+
+def task_lists():
+    return api(TASKS + "/users/@me/lists", {"maxResults": 100}).get("items", [])
+
+
+def events():
+    start, end = week_window(dt.date.today())
+    rows = []
+    for c in api(CAL + "/users/me/calendarList", {"minAccessRole": "reader"}).get("items", []):
+        if not c.get("selected"):
+            continue  # the ones ticked in the Google Calendar sidebar
+        got = api(CAL + "/calendars/" + urllib.parse.quote(c["id"], safe="") + "/events", {
+            "timeMin": start.isoformat(), "timeMax": end.isoformat(),
+            "singleEvents": "true", "orderBy": "startTime", "maxResults": 250})
+        rows += [norm_event(e, c.get("backgroundColor", "")) for e in got.get("items", [])
+                 if e.get("status") != "cancelled"]
+    # dated tasks: Google Calendar draws them as its "Tasks" calendar, but they
+    # only exist in the Tasks API. A due date is a bare UTC day.
+    for l in task_lists():
+        got = api(TASKS + "/lists/" + l["id"] + "/tasks", {
+            "showCompleted": "false", "maxResults": 100,
+            "dueMin": start.strftime("%Y-%m-%dT00:00:00Z"),
+            "dueMax": end.strftime("%Y-%m-%dT00:00:00Z")})
+        rows += [{"title": t.get("title", ""), "allDay": True, "start": t["due"][:10],
+                  "end": "", "color": "", "link": "https://tasks.google.com/"}
+                 for t in got.get("items", []) if t.get("due") and t.get("title", "").strip()]
+    rows.sort(key=sort_key)
+    return rows
+
+
+def nest(tasks):
+    """Flat API tasks -> display order: each top-level task, then its subtasks."""
+    live = [t for t in tasks if t.get("title", "").strip()]
+    pos = lambda t: t.get("position", "")
+    kids = {}
+    for t in live:
+        if t.get("parent"):
+            kids.setdefault(t["parent"], []).append(t)
+    out = []
+    for t in sorted((t for t in live if not t.get("parent")), key=pos):
+        for depth, x in [(0, t)] + [(1, k) for k in sorted(kids.get(t["id"], []), key=pos)]:
+            out.append({"id": x["id"], "title": x["title"], "due": x.get("due", "")[:10],
+                        "indent": depth})
+    return out
+
+
+def tasks():
+    """One entry per task list, in Google's order: the widget's columns."""
+    return [{"id": l["id"], "title": l.get("title", ""),
+             "tasks": nest(api(TASKS + "/lists/" + l["id"] + "/tasks",
+                               {"showCompleted": "false", "maxResults": 100}).get("items", []))}
+            for l in task_lists()]
+
+
+def decide(local, remote, st):
+    """What one sync pass does, given both sides and what each held last time."""
+    if local != st.get("local", ""):
+        # ponytail: local wins when both sides changed inside one poll; a phone
+        # edit made in that same minute is overwritten. Merge if that ever bites.
+        return "push"
+    return "pull" if remote != st.get("remote", "") else "none"
+
+
+def doc_text(fid):
+    raw = call(DRIVE + "/" + fid + "/export", {"mimeType": "text/plain"})
+    return raw.decode("utf-8-sig").replace("\r\n", "\n").rstrip("\n")
+
+
+def note_sync(pad):
+    """The pad's text file <-> one Google Doc. State remembers what each side
+    held after the last pass, since a Doc does not hand text back byte-for-byte."""
+    suffix = "" if pad == "main" else "-" + pad
+    path = os.path.join(STATE, "desktop-notes" + suffix + ".txt")
+    spath = os.path.join(STATE, "desktop-notes" + suffix + ".sync.json")
+    try:
+        with open(path) as f:
+            local = f.read()
+    except OSError:
+        local = ""
+    try:
+        with open(spath) as f:
+            st = json.load(f)
+    except (OSError, ValueError):
+        st = {}
+    cfg = load()
+    fid = cfg.get("notes", {}).get(pad)
+    remote = None
+    if fid:
+        try:
+            remote = doc_text(fid)
+        except urllib.error.HTTPError as e:
+            if e.code != 404:
+                raise
+            fid = None  # the Doc was deleted: make a new one from the pad
+    if not fid:
+        name = "Desktop Notes" + ("" if pad == "main" else " (" + pad + ")")
+        b = "ryoku" + secrets.token_hex(8)
+        body = ("--%s\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n%s\r\n"
+                "--%s\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\n%s\r\n--%s--" % (
+                    b, json.dumps({"name": name, "mimeType": "application/vnd.google-apps.document"}),
+                    b, local, b)).encode()
+        fid = json.loads(call(DRIVE_UP, {"uploadType": "multipart"}, "POST", body,
+                              "multipart/related; boundary=" + b))["id"]
+        cfg = load()
+        cfg.setdefault("notes", {})[pad] = fid
+        save(cfg)
+        act = "push"
+    else:
+        act = decide(local, remote, st)
+        if act == "push":
+            call(DRIVE_UP + "/" + fid, {"uploadType": "media"}, "PATCH", local.encode(),
+                 "text/plain; charset=UTF-8")
+    if act == "pull":
+        local = remote
+        os.makedirs(STATE, exist_ok=True)
+        with open(path + ".tmp", "w") as f:
+            f.write(local)
+        os.replace(path + ".tmp", path)
+    if act != "none":
+        with open(spath, "w") as f:
+            json.dump({"local": local, "remote": doc_text(fid) if act == "push" else remote}, f)
+    return {"ok": True, "action": act, "doc": "https://docs.google.com/document/d/" + fid}
+
+
+def selftest():
+    timed = norm_event({"summary": "Standup", "start": {"dateTime": "2026-10-13T09:00:00+05:30"},
+                        "end": {"dateTime": "2026-10-13T09:15:00+05:30"}})
+    allday = norm_event({"start": {"date": "2026-10-13"}, "end": {"date": "2026-10-14"}})
+    late = norm_event({"summary": "Z", "start": {"dateTime": "2026-10-13T18:00:00Z"}})
+    assert timed == {"title": "Standup", "allDay": False, "start": "2026-10-13T09:00:00+05:30",
+                     "end": "2026-10-13T09:15:00+05:30", "color": "", "link": ""}
+    assert allday["allDay"] and allday["title"] == "(No title)"
+    assert sorted([late, timed], key=sort_key) == [timed, late]
+    start, end = week_window(dt.date(2026, 10, 13))
+    assert (start.date(), end.date()) == (dt.date(2026, 10, 12), dt.date(2026, 10, 19))
+    flat = nest([{"id": "c", "title": "kid", "parent": "a", "position": "1"},
+                 {"id": "b", "title": "second", "position": "2"},
+                 {"id": "a", "title": "first", "position": "1"},
+                 {"id": "x", "title": " "}])
+    assert [(t["id"], t["indent"]) for t in flat] == [("a", 0), ("c", 1), ("b", 0)]
+    assert decide("a", "a", {"local": "a", "remote": "a"}) == "none"
+    assert decide("b", "a", {"local": "a", "remote": "a"}) == "push"
+    assert decide("a", "c", {"local": "a", "remote": "a"}) == "pull"
+    assert decide("b", "c", {"local": "a", "remote": "a"}) == "push"
+    print("ok")
+
+
+def main(argv):
+    cmd = argv[1] if len(argv) > 1 else ""
+    if cmd == "login" and len(argv) == 3:
+        return login(argv[2])
+    if cmd == "selftest":
+        return selftest()
+    try:
+        if cmd == "events":
+            out = {"ok": True, "items": events()}
+        elif cmd == "tasks":
+            out = {"ok": True, "items": tasks()}
+        elif cmd == "done" and len(argv) == 4:
+            api(TASKS + "/lists/" + argv[2] + "/tasks/" + argv[3], method="PATCH",
+                body={"status": "completed"})
+            out = {"ok": True}
+        elif cmd == "add" and len(argv) in (3, 4):
+            api(TASKS + "/lists/" + (argv[3] if len(argv) == 4 else "@default") + "/tasks",
+                method="POST", body={"title": argv[2]})
+            out = {"ok": True}
+        elif cmd == "note-sync" and len(argv) == 3:
+            out = note_sync(argv[2])
+        else:
+            sys.exit(__doc__)
+    except AuthError:
+        out = {"ok": False, "error": "auth"}
+    except Exception as e:  # offline, API disabled, quota: the widget shows it
+        out = {"ok": False, "error": str(e)}
+    print(json.dumps(out))
+
+
+if __name__ == "__main__":
+    main(sys.argv)

@@ -1,0 +1,33 @@
+# Ryoku dictation config for Voxtype. Managed by Ryoku Settings > Dictation
+# (ryoku-hub voxtype); hand edits are overwritten when you change it there.
+# The shell owns Super+` and the pill mic-wave, so the built-in hotkey is off.
+# ryoku-preset: whisper-fast
+
+state_file = "auto"
+
+[hotkey]
+enabled = false
+
+[audio]
+device = "default"
+sample_rate = 16000
+max_duration_secs = 60
+pause_media = true
+
+[whisper]
+model = "base.en"
+language = "en"
+translate = false
+
+[output]
+mode = "type"
+fallback_to_clipboard = true
+type_delay_ms = 1
+
+[output.notification]
+on_recording_start = false
+on_recording_stop = false
+on_transcription = false
+
+[osd]
+enabled = false

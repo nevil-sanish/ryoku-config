@@ -1,0 +1,633 @@
+/*
+
+Sidra × Matugen — Refined
+Save as:
+~/.config/matugen/templates/sidra.css
+Material You / Material 3 inspired theme
+*/
+
+/* ============================================================
+
+Core palette
+============================================================ */
+
+:root {
+/* Surfaces */
+--pageBG: #101418 !important;
+--shelfBG: #191c20 !important;
+--opaqueShelfBG: #1d2024 !important;
+--fallbackMaterialBG: #1d2024 !important;
+--genericJoeColor: #272a2f !important;
+
+/* Text */
+--systemPrimary: #e0e2e8 !important;
+--systemPrimary-vibrant: #e0e2e8 !important;
+--systemSecondary: #c2c7cf !important;
+--systemSecondary-vibrant: #c2c7cf !important;
+--systemTertiary: #8c9199 !important;
+--systemQuaternary: #42474e !important;
+--systemQuinary: #42474e !important;
+
+/* Borders / separators */
+--labelDivider: #42474e !important;
+--vibrantDivider: #8c9199 !important;
+
+/* Player */
+--playerBackground: #1d2024 !important;
+--playerBackgroundFallback: #1d2024 !important;
+--playerLCDBGFill: #272a2f !important;
+--playerMissingArtworkBg: #42474e !important;
+--playerMissingArtworkIcon: #c2c7cf !important;
+--playerScrubberFill: #9dcbfc !important;
+--playerScrubberTrack: #42474e !important;
+--playerPlatterButtonBGFill: #9dcbfc !important;
+--playerPlatterButtonIconFill: #003355 !important;
+--playerDropShadow2: #000000 !important;
+
+/* Navigation */
+--segmentedControlBG: #1d2024 !important;
+--segmentedControlSelectedBG: #3a4857 !important;
+
+/* Tracklist */
+--tracklistHoverColor: #272a2f !important;
+--tracklistAltRowColor: #191c20 !important;
+
+/* Materials */
+--systemStandardThickMaterialSover:
+#1d2024 !important;
+
+--systemHeaderMaterialSover:
+#272a2f !important;
+
+--systemToolbarTitlebarMaterialSover:
+#272a2f !important;
+}
+
+/* ============================================================
+
+Global aliases
+
+============================================================ */
+
+{
+/* Accent */
+--keyColor: #9dcbfc !important;
+--keyColor-rollover: #cfe4ff !important;
+--keyColor-pressed: #9dcbfc !important;
+--keyColor-deepPressed: #9dcbfc !important;
+--keyColor-disabled: #134a74 !important;
+
+--musicKeyColor: #9dcbfc !important;
+--musicBrandBG: #9dcbfc !important;
+--selectionColor: #9dcbfc !important;
+
+/* Chrome / LCD */
+--chromePlayerBGFill:
+#1d2024 !important;
+
+--lcd-bg-color:
+#272a2f !important;
+
+/* Useful semantic aliases */
+--sidra-accent: #9dcbfc !important;
+--sidra-accent-hover: #134a74 !important;
+--sidra-accent-soft: #134a74 !important;
+
+--sidra-surface: #101418 !important;
+--sidra-surface-low:
+#191c20 !important;
+
+--sidra-surface-container:
+#1d2024 !important;
+
+--sidra-surface-high:
+#272a2f !important;
+
+--sidra-text: #e0e2e8 !important;
+--sidra-text-secondary:
+#c2c7cf !important;
+
+--sidra-border:
+#42474e !important;
+
+--sidra-border-strong:
+#8c9199 !important;
+
+/* Scrollbars */
+scrollbar-color:
+#8c9199
+#101418
+!important;
+}
+
+/* ============================================================
+
+Base document
+============================================================ */
+
+html,
+body {
+background:
+#101418 !important;
+
+color:
+#e0e2e8 !important;
+
+color-scheme: dark;
+}
+
+/* ============================================================
+
+Selection
+============================================================ */
+
+::selection {
+background:
+#9dcbfc !important;
+
+color:
+#003355 !important;
+}
+
+/* ============================================================
+
+Scrollbars
+============================================================ */
+
+::-webkit-scrollbar {
+width: 10px;
+height: 10px;
+}
+
+::-webkit-scrollbar-track {
+background:
+#101418 !important;
+}
+
+::-webkit-scrollbar-thumb {
+background:
+#42474e !important;
+
+border: 2px solid
+#101418 !important;
+
+border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+background:
+#8c9199 !important;
+}
+
+/* ============================================================
+
+Player
+============================================================ */
+
+.chrome-player::before {
+background-color:
+#1d2024 !important;
+
+background-image: none !important;
+}
+
+.chrome-player {
+background-color:
+#1d2024 !important;
+
+border-color:
+#42474e !important;
+}
+
+/* ============================================================
+
+Side panels
+============================================================ */
+
+.side-panel {
+background-color:
+#101418 !important;
+
+backdrop-filter:
+blur(50px) saturate(100%) !important;
+
+-webkit-backdrop-filter:
+blur(50px) saturate(100%) !important;
+
+border-color:
+#42474e !important;
+}
+
+.side-panel.side-panel-header-wrapper,
+.side-panel .side-panel-header-wrapper,
+.side-panel-header-wrapper {
+background-color:
+#101418 !important;
+
+border-color:
+#42474e !important;
+}
+
+/* ============================================================
+
+Footer
+============================================================ */
+
+:is(
+footer,
+.scrollable-page footer
+) {
+background:
+#191c20 !important;
+
+background-color:
+#191c20 !important;
+
+border-color:
+#42474e !important;
+
+color:
+#e0e2e8 !important;
+}
+
+:is(
+footer,
+.scrollable-page footer
+) :is(
+a,
+button,
+select,
+[role="button"],
+[class*="dropdown"]
+) {
+background-color:
+#1d2024 !important;
+
+border-color:
+#42474e !important;
+
+color:
+#e0e2e8 !important;
+
+transition:
+background-color 150ms ease,
+border-color 150ms ease,
+color 150ms ease !important;
+}
+
+:is(
+footer,
+.scrollable-page footer
+) :is(
+a,
+button,
+select,
+[role="button"],
+[class*="dropdown"]
+):hover {
+background-color:
+#272a2f !important;
+
+border-color:
+#8c9199 !important;
+}
+
+/* ============================================================
+
+Country / region picker
+============================================================ */
+
+[class*="locale-switcher"] {
+background:
+#1d2024 !important;
+
+background-color:
+#1d2024 !important;
+
+color:
+#e0e2e8 !important;
+
+border-color:
+#42474e !important;
+}
+
+/* ============================================================
+
+Country / region banner
+============================================================ */
+
+[data-testid="banner-container"] {
+background:
+#1d2024 !important;
+
+background-color:
+#1d2024 !important;
+
+color:
+#e0e2e8 !important;
+
+border-color:
+#42474e !important;
+
+box-shadow:
+0 4px 16px
+#000000 !important;
+}
+
+[data-testid="banner-container"]
+[data-testid="close-button"] {
+color:
+#e0e2e8 !important;
+
+fill:
+#e0e2e8 !important;
+
+transition:
+color 150ms ease,
+opacity 150ms ease !important;
+}
+
+[data-testid="banner-container"]
+[data-testid="close-button"]:hover {
+color:
+#9dcbfc !important;
+
+opacity: 1 !important;
+}
+
+[data-testid="banner-container"]
+[data-testid="close-button"] svg path {
+fill:
+currentColor !important;
+}
+
+[data-testid="banner-container"]
+[data-testid="dropdown-button"] {
+background-color:
+#272a2f !important;
+
+border-color:
+#8c9199 !important;
+
+color:
+#e0e2e8 !important;
+
+transition:
+background-color 150ms ease,
+border-color 150ms ease !important;
+}
+
+[data-testid="banner-container"]
+[data-testid="dropdown-button"]:hover {
+background-color:
+#32353a !important;
+
+border-color:
+#9dcbfc !important;
+}
+
+/* ============================================================
+
+Primary buttons
+============================================================ */
+
+.button.primary button.click-action {
+background-color:
+#9dcbfc !important;
+
+color:
+#003355 !important;
+
+border-color:
+#9dcbfc !important;
+
+transition:
+background-color 150ms ease,
+box-shadow 150ms ease,
+transform 100ms ease !important;
+}
+
+.button.primary button.click-action:hover {
+background-color:
+#134a74 !important;
+
+color:
+#cfe4ff !important;
+
+box-shadow:
+0 2px 8px
+#000000 !important;
+}
+
+.button.primary button.click-action:active {
+transform: scale(0.98);
+}
+
+/* ============================================================
+
+Links
+============================================================ */
+
+a {
+color:
+#9dcbfc !important;
+
+transition:
+color 150ms ease !important;
+}
+
+a:hover {
+color:
+#cfe4ff !important;
+}
+
+/* ============================================================
+
+Inputs / controls
+============================================================ */
+
+:is(
+input,
+textarea,
+select
+) {
+background-color:
+#1d2024 !important;
+
+color:
+#e0e2e8 !important;
+
+border-color:
+#42474e !important;
+}
+
+:is(
+input,
+textarea,
+select
+):focus {
+border-color:
+#9dcbfc !important;
+
+outline:
+2px solid
+#9dcbfc !important;
+
+outline-offset: -1px;
+}
+
+/* ============================================================
+
+Generic interactive states
+============================================================ */
+
+:is(
+button,
+[role="button"]
+) {
+transition:
+background-color 150ms ease,
+color 150ms ease,
+border-color 150ms ease,
+opacity 150ms ease !important;
+}
+
+:is(
+button,
+[role="button"]
+):hover {
+background-color:
+#272a2f !important;
+}
+
+:is(
+button,
+[role="button"]
+):focus-visible {
+outline:
+2px solid
+#9dcbfc !important;
+
+outline-offset: 2px;
+}
+
+/* ============================================================
+
+Segmented controls / navigation
+============================================================ */
+
+:is(
+[role="tablist"],
+.segmented-control
+) {
+background-color:
+#1d2024 !important;
+
+border-color:
+#42474e !important;
+}
+
+:is(
+[role="tab"],
+.segmented-control button
+) {
+color:
+#c2c7cf !important;
+}
+
+:is(
+[role="tab"][aria-selected="true"],
+.segmented-control button.active
+) {
+background-color:
+#3a4857 !important;
+
+color:
+#d6e4f7 !important;
+}
+
+/* ============================================================
+
+Tracklist
+============================================================ */
+
+:is(
+.tracklist,
+.track-list
+) {
+background-color:
+#101418 !important;
+}
+
+.tracklist :is(
+tr,
+[role="row"]
+):hover {
+background-color:
+#272a2f !important;
+}
+
+.tracklist :is(
+tr:nth-child(even),
+[role="row"]:nth-child(even)
+) {
+background-color:
+#191c20 !important;
+}
+
+.tracklist :is(
+tr:nth-child(even),
+[role="row"]:nth-child(even)
+):hover {
+background-color:
+#272a2f !important;
+}
+
+/* ============================================================
+
+Dividers
+============================================================ */
+
+hr {
+border-color:
+#42474e !important;
+}
+
+/* ============================================================
+
+Disabled states
+============================================================ */
+
+:is(
+button,
+input,
+textarea,
+select,
+[role="button"]
+):disabled,
+:is(
+button,
+input,
+textarea,
+select,
+[role="button"]
+)[aria-disabled="true"] {
+opacity: 0.5 !important;
+cursor: not-allowed !important;
+}
+
+/* ============================================================
+
+Reduced motion
+============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+*,
+*::before,
+*::after {
+transition-duration: 0.01ms !important;
+animation-duration: 0.01ms !important;
+animation-iteration-count: 1 !important;
+scroll-behavior: auto !important;
+}
+}

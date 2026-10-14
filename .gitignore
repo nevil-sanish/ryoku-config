@@ -1,0 +1,14 @@
+# never commit credentials, tokens or machine state
+*credentials*
+*.git-credentials
+google-client.json
+client_secret*.json
+token.json
+hub.toml
+.gitconfig
+fish_variables
+dconf/
+monitors.lua
+monitors-applied.json
+bookmarks
+__pycache__/
