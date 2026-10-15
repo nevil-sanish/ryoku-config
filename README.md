@@ -2,7 +2,7 @@
 
 My Ryoku desktop setup (Hyprland + Quickshell on Arch): theme, bar, launcher,
 hub, keybinds, animations, terminal and app colours, plus desktop widgets
-including Google Tasks, Calendar, Docs and Circle to Search. Clone it to get
+including Google Tasks, Calendar and Docs. Clone it to get
 the same look and feel.
 
 ## Install (on a Ryoku / RyokuArch system)
@@ -94,4 +94,4 @@ Moved to its own repo: <https://github.com/nevil-sanish/circle-to-search-linux>
 
 Ryoku and its shell are by the Ryoku project. Plugins under `plugins/` keep
 their original authors and licenses (see each plugin's `manifest.json` /
-`LICENSE` / `PROVENANCE.md`). The Google and Circle to Search widgets are MIT.
+`LICENSE` / `PROVENANCE.md`). The Google widgets are MIT.
