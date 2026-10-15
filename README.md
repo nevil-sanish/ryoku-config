@@ -40,7 +40,6 @@ I use from the AUR are listed in `pkglist-aur.txt` (optional).
 | `google-tasks`       | Google Tasks default list: add tasks, click ○ to complete       |
 | `google-calendar`    | Next events on your primary calendar; click to open, + new      |
 | `google-docs`        | Recently edited Google Docs; + new doc, K opens Google Keep     |
-| `circle-to-search`   | Drag a box around anything on screen → Google Lens results      |
 | `mjw-todo`, `mjw-notes`, `mjw-habits` | Local to-do, notes and habit cards (by their original authors) |
 | `bluetooth-profiles` | Bar glyph to switch Bluetooth audio profiles/codecs             |
 
@@ -74,26 +73,14 @@ Tokens are stored per widget in `~/.local/state/ryoku/plugins/<id>/token.json`
 
 ## Circle to Search
 
-Needs `grim`, `slurp`, `curl`, `xdg-open`. Click the widget, drag a box; the
-crop is uploaded to `lens.google.com` and results open in your browser. For a
-hotkey:
-
-```sh
-install -Dm755 plugins/circle-to-search/bin/circle-search ~/.local/bin/circle-search
-```
-
-```lua
--- ~/.config/hypr/user.lua (check Hub > Keybinds that SUPER+SHIFT+S is free first)
-hl.bind("SUPER + SHIFT + S", hl.dsp.exec_cmd(os.getenv("HOME") .. "/.local/bin/circle-search"))
-```
+Moved to its own repo: <https://github.com/nevil-sanish/circle-to-search-linux>
+(Google Lens or Groq/Gemini/ChatGPT/Claude on any screen crop).
 
 ## What the widgets run, read and write
 
 - `bin/gapi` (Python 3, stdlib only): OAuth on a `127.0.0.1` redirect, then
   HTTPS calls to `*.googleapis.com` only. Reads your client JSON, writes only
   its token file.
-- `bin/circle-search` (bash): screenshot of the selected area to a temp file
-  (deleted after), upload to Google Lens, open the result.
 
 ## Not included (on purpose)
 
